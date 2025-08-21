@@ -1,275 +1,949 @@
+import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
+import { SplashScreen } from "@/components/Onboarding/SplashScreen";
+import { AuthScreen } from "@/components/Auth/AuthScreen";
+import { useAuth } from "@/hooks/useAuth";
+import { OnboardingScreen } from "@/components/Onboarding/OnboardingScreen";
+import { ProfileScreen } from "@/components/Profile/ProfileScreen";
+import HomeScreen from "@/components/Home/HomeScreen";
+import { VideoCallScreen } from "@/components/VideoChat/VideoCallScreen";
+import { PostCallProfileScreen } from "@/components/VideoChat/PostCallProfileScreen";
+import { MatchScreen } from "@/components/Match/MatchScreen";
+import { ChatListScreen, ChatPreview } from "@/components/Chat/ChatListScreen";
+import { ChatDetailScreen, ChatData, Message } from "@/components/Chat/ChatDetailScreen";
+import { PremiumModal } from "@/components/Premium/PremiumModal";
+import { CoinPurchaseModal } from "@/components/Coins/CoinPurchaseModal";
+import { VoiceCallScreen } from "@/components/VoiceCall/VoiceCallScreen";
+import { VoiceCallActiveScreen } from "@/components/VoiceCall/VoiceCallActiveScreen";
+import { SpinWheelScreen } from "@/components/SpinWheel/SpinWheelScreen";
+import { LoginStreakModal } from "@/components/Rewards/LoginStreakModal";
+import { MysteryBoxModal } from "@/components/Rewards/MysteryBoxModal";
+import { BlurredProfilesScreen } from "@/components/Profile/BlurredProfilesScreen";
+import { BottomNav } from "@/components/Layout/BottomNav";
+import { SettingsModal } from "@/components/ui/settings-modal";
+import { WebRTCDiagnosticPanel } from "@/components/Diagnostics/WebRTCDiagnosticPanel";
+import { useLoginStreak } from "@/hooks/useLoginStreak";
+import { useMysteryBox } from "@/hooks/useMysteryBox";
+import { useBlurredProfiles } from "@/hooks/useBlurredProfiles";
+import { useToast } from "@/hooks/use-toast";
+import { useRealMatching } from "@/hooks/useRealMatching";
+import { CoinsScreen } from "@/components/Coins/CoinsScreen";
+import { PremiumScreen } from "@/components/Premium/PremiumScreen";
+import { EarnCoinsScreen } from "@/components/Coins/EarnCoinsScreen";
+import { Video, Gem, Phone, Flame } from "lucide-react";
+import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { Button } from "@/components/ui/button";
+import { SocialScreen } from "@/components/Social/SocialScreen";
+import { RoomsScreen } from "@/components/Rooms/RoomsScreen";
+import { GroupCallScreen } from "@/components/Groups/GroupCallScreen";
+import { useRoomInvites } from "@/hooks/useRoomInvites";
+import { ReferralScreen } from "@/components/Referrals/ReferralScreen";
+import { useReferrals } from "@/hooks/useReferrals";
+import heroBackground from "/placeholder.svg";
 
-import { useState, useEffect, useRef } from 'react';
-import { Send, Users, Shuffle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-
-interface Message {
-  id: string;
-  text: string;
-  sender: 'me' | 'stranger';
-  timestamp: Date;
+interface UserProfile {
+  username: string;
+  photos: string[];
+  bio: string;
+  interests: string[];
+  matchPreference: "anyone" | "men" | "women";
+  gender: "male" | "female" | "other";
+  isPremium?: boolean;
 }
 
-const randomNames = [
-  'Alex', 'Jordan', 'Sam', 'Casey', 'Riley', 'Morgan', 'Taylor', 'Avery',
-  'Quinn', 'Dakota', 'Skyler', 'Phoenix', 'River', 'Sage', 'Blake', 'Charlie'
-];
-
 const Index = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-  const [strangerName, setStrangerName] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const { i18n } = useTranslation();
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const connectToStranger = () => {
-    setIsConnecting(true);
-    setMessages([]);
+    // Load saved language preference
+    const savedLanguage = localStorage.getItem('preferred-language');
+    if (savedLanguage && savedLanguage !== i18n.language) {
+      i18n.changeLanguage(savedLanguage);
+    }
     
-    setTimeout(() => {
-      const randomName = randomNames[Math.floor(Math.random() * randomNames.length)];
-      setStrangerName(randomName);
-      setIsConnected(true);
-      setIsConnecting(false);
-      
-      // Stranger sends a greeting
-      setTimeout(() => {
-        const greetings = [
-          "Hey there! How's it going?",
-          "Hi! Nice to meet you 👋",
-          "Hello! What's up?",
-          "Hey! How are you doing today?",
-          "Hi there! Ready to chat?"
-        ];
-        const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-        
-        setMessages([{
-          id: Date.now().toString(),
-          text: greeting,
-          sender: 'stranger',
-          timestamp: new Date()
-        }]);
-      }, 1000);
-    }, 2000);
+    // Listen for voice navigation event
+    const handleVoiceNavigation = () => {
+      setActiveTab("voice");
+    };
+    
+    window.addEventListener('navigate-to-voice', handleVoiceNavigation);
+    
+    return () => {
+      window.removeEventListener('navigate-to-voice', handleVoiceNavigation);
+    };
+  }, [i18n]);
+  // ALL HOOKS MUST BE CALLED AT THE TOP - NO CONDITIONAL HOOKS
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [appState, setAppState] = useState<"splash" | "onboarding" | "main" | "spin-wheel" | "auth">("splash");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [currentScreen, setCurrentScreen] = useState<"home" | "call" | "voice-call" | "post-call" | "chat-detail" | "blurred-profiles" | "premium" | "earn-coins" | "social" | "room-call" | "referrals" | "match" | "video">("home");
+  const [activeTab, setActiveTab] = useState("home");
+  const [showCoinModal, setShowCoinModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [hasUnlimitedCalls, setHasUnlimitedCalls] = useState(false);
+  const [unlimitedCallsExpiry, setUnlimitedCallsExpiry] = useState<Date | null>(null);
+  const [autoRenewEnabled, setAutoRenewEnabled] = useState(false);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [activeRoomType, setActiveRoomType] = useState<'video' | 'voice' | 'chat' | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [coinBalance, setCoinBalance] = useState(100);
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showDiagnosticPanel, setShowDiagnosticPanel] = useState(false);
+  
+  // Login streak and mystery box hooks
+  const { streakData, claimReward } = useLoginStreak();
+  const { profiles: blurredProfiles, unlockProfile } = useBlurredProfiles();
+  const { 
+    showMysteryBox, 
+    currentReward, 
+    triggerMysteryBox, 
+    openMysteryBox, 
+    closeMysteryBox 
+  } = useMysteryBox();
+  
+  // Real matching hook
+  const realMatching = useRealMatching({
+    userGender: userProfile?.gender || 'male',
+    isPremium
+  });
+  
+  // Room invites hook
+  useRoomInvites();
+  
+  // Referrals hook
+  const { useReferralCode } = useReferrals();
+  
+  // Coin balance hook
+  const { balance: coinBalanceFromHook, loading: coinLoading } = useCoinBalance();
+  
+  // Use real coin balance from Supabase when available
+  const effectiveCoinBalance = !coinLoading ? coinBalanceFromHook : coinBalance;
+  
+  const { toast } = useToast();
+  
+  // Mock data - these can stay here as they're not hooks
+  const mockCallPartnerProfile = {
+    username: "Shafa Asadel",
+    age: 20,
+    photos: [
+      "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg",
+      "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg",
+      "https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg"
+    ],
+    bio: "Music enthusiast, always on the lookout for new tunes and ready to share playlists. Let's discover new sounds and enjoy the rhythm of life! ❤️",
+    distance: "2 km away",
+    commonInterests: 4,
+    aboutMe: {
+      gender: "Woman",
+      religion: "Muslims",
+      drinking: "Sometimes",
+      smoking: "Never"
+    },
+    interests: ["🎵 Pop Punk", "☕ Coffee", "🥊 Boxing", "🎮 Fifa Mobile", "⚽ Real Madrid"]
   };
+  
+  const [chats, setChats] = useState<ChatPreview[]>([
+    { id: "1", name: "Sarah", lastMessage: "Hey there! 👋", time: "2m", unread: 2 },
+    { id: "2", name: "Mike", lastMessage: "Nice talking to you!", time: "1h" },
+    { id: "3", name: "Emma", lastMessage: "See you later", time: "3h" },
+    { id: "4", name: "Alex", lastMessage: "That was fun! 😄", time: "5h", unread: 1 },
+    { id: "5", name: "Maria", lastMessage: "Thanks for the chat", time: "1d" },
+    { id: "6", name: "David", lastMessage: "Great conversation!", time: "2d" },
+  ]);
+  
+  const [chatData, setChatData] = useState<Record<string, ChatData>>({
+    "1": {
+      id: "1",
+      name: "Sarah",
+      messages: [
+        { id: "1", sender: "them", text: "Hey there! 👋", time: "10:30" },
+        { id: "2", sender: "me", text: "Hello! How are you?", time: "10:32" },
+        { id: "3", sender: "them", text: "I'm doing great! Thanks for asking", time: "10:33" },
+        { id: "4", sender: "me", text: "That's awesome! What do you like to do for fun?", time: "10:35" },
+        { id: "5", sender: "them", text: "I love hiking and photography! The mountains here are beautiful 📸", time: "10:37" },
+      ]
+    },
+    "2": {
+      id: "2",
+      name: "Mike",
+      messages: [
+        { id: "1", sender: "them", text: "Hi! How's your day going?", time: "9:15" },
+        { id: "2", sender: "me", text: "Pretty good! Just relaxing. You?", time: "9:18" },
+        { id: "3", sender: "them", text: "Same here! Working from home today", time: "9:20" },
+        { id: "4", sender: "me", text: "Nice! What kind of work do you do?", time: "9:22" },
+        { id: "5", sender: "them", text: "I'm a software developer. Really enjoy it!", time: "9:25" },
+        { id: "6", sender: "me", text: "That's cool! I'm interested in tech too", time: "9:27" },
+        { id: "7", sender: "them", text: "Nice talking to you!", time: "9:30" },
+      ]
+    },
+    "3": {
+      id: "3",
+      name: "Emma",
+      messages: [
+        { id: "1", sender: "them", text: "Hello! Nice to meet you", time: "Yesterday" },
+        { id: "2", sender: "me", text: "Hi Emma! Nice to meet you too", time: "Yesterday" },
+        { id: "3", sender: "them", text: "See you later", time: "Yesterday" },
+      ]
+    },
+    "4": {
+      id: "4",
+      name: "Alex",
+      messages: [
+        { id: "1", sender: "them", text: "Great video call earlier!", time: "5:20" },
+        { id: "2", sender: "me", text: "Yeah, that was really fun!", time: "5:22" },
+        { id: "3", sender: "them", text: "We should chat again soon", time: "5:25" },
+        { id: "4", sender: "me", text: "Definitely! 😊", time: "5:27" },
+        { id: "5", sender: "them", text: "That was fun! 😄", time: "5:30" },
+      ]
+    },
+    "5": {
+      id: "5",
+      name: "Maria",
+      messages: [
+        { id: "1", sender: "me", text: "Hey Maria! How are you?", time: "Yesterday" },
+        { id: "2", sender: "them", text: "Hi! I'm doing well, thanks", time: "Yesterday" },
+        { id: "3", sender: "them", text: "Thanks for the chat", time: "Yesterday" },
+      ]
+    },
+    "6": {
+      id: "6",
+      name: "David",
+      messages: [
+        { id: "1", sender: "them", text: "Hello! Nice meeting you in the video chat", time: "2 days ago" },
+        { id: "2", sender: "me", text: "Hey David! Great meeting you too", time: "2 days ago" },
+        { id: "3", sender: "them", text: "Great conversation!", time: "2 days ago" },
+      ]
+    }
+  });
 
-  const sendMessage = () => {
-    if (!currentMessage.trim() || !isConnected) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: currentMessage,
-      sender: 'me',
-      timestamp: new Date()
+  // Listen for room join events from invites
+  useEffect(() => {
+    const handleJoinRoom = (event: any) => {
+      const { roomId } = event.detail;
+      setActiveRoomId(roomId);
+      setActiveRoomType('video'); // Default to video
+      setCurrentScreen('room-call');
+      setActiveTab('rooms');
     };
 
-    setMessages(prev => [...prev, newMessage]);
-    setCurrentMessage('');
+    window.addEventListener('joinRoom', handleJoinRoom);
+    return () => window.removeEventListener('joinRoom', handleJoinRoom);
+  }, []);
 
-    // Simulate stranger typing and responding
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      
-      const responses = [
-        "That's interesting! Tell me more.",
-        "I see what you mean 🤔",
-        "Really? That's cool!",
-        "Haha, that's funny! 😄",
-        "I totally agree with you.",
-        "That's a great point!",
-        "I never thought about it that way.",
-        "Thanks for sharing that!",
-        "What do you think about...?",
-        "That reminds me of something similar."
-      ];
-      
-      const response = responses[Math.floor(Math.random() * responses.length)];
-      
-      const strangerMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: response,
-        sender: 'stranger',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, strangerMessage]);
-    }, Math.random() * 3000 + 1000);
-  };
+  // Handle coin balance click to navigate to coins tab
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#coins') {
+        setActiveTab('coins');
+        window.location.hash = '';
+      } else if (window.location.hash === '#recent-activity') {
+        setCurrentScreen('blurred-profiles');
+        window.location.hash = '';
+      }
+    };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Check on mount
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Check for referral code in URL on app load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode && isAuthenticated) {
+      // Auto-apply referral code if user is authenticated
+      useReferralCode(refCode).then((success) => {
+        if (success) {
+          // Clear URL parameter after successful application
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      });
+    }
+  }, [isAuthenticated, useReferralCode]);
+
+  // Event handlers
+  const handleStartMatch = async () => {
+    if (userProfile) {
+      
+      // Show matching explanation toast
+      const explanation = realMatching.getMatchingExplanation();
+      toast({
+        title: explanation.title,
+        description: explanation.description,
+      });
+      
+      try {
+        // Go directly to video call screen instead of match screen
+        setCurrentScreen("video");
+        
+        // Start the real matching process
+        const result = await realMatching.startMatching(userProfile.matchPreference);
+        
+        if (!result?.success) {
+        // If matching fails, go back to home and show diagnostic option
+        setCurrentScreen("home");
+        
+        // Show diagnostic panel option for debugging - separate toast and button
+        toast({
+          title: "Match Failed",
+          description: "Unable to start matching. Run diagnostics to identify the issue.",
+          variant: "destructive",
+        });
+        
+        // Show diagnostic panel automatically after a short delay
+        setTimeout(() => setShowDiagnosticPanel(true), 1000);
+        }
+      } catch (error) {
+        setCurrentScreen("home");
+        
+        // Show diagnostic panel option for debugging - separate toast and button
+        toast({
+          title: "Match Failed", 
+          description: "Unable to start matching. Run diagnostics to identify the issue.",
+          variant: "destructive",
+        });
+        
+        // Show diagnostic panel automatically after a short delay
+        setTimeout(() => setShowDiagnosticPanel(true), 1000);
+      }
+    } else {
+      toast({
+        title: "Profile Required",
+        description: "Please complete your profile to start matching.",
+        variant: "destructive"
+      });
     }
   };
 
-  const disconnect = () => {
-    setIsConnected(false);
-    setMessages([]);
-    setStrangerName('');
-    setIsTyping(false);
+  const handleStartVoiceCall = () => {
+    if (userProfile) {
+      // Show matching explanation toast
+      const explanation = realMatching.getMatchingExplanation();
+      toast({
+        title: explanation.title + " (Voice)",
+        description: explanation.description,
+      });
+      
+      // Start the real matching process
+      realMatching.startMatching(userProfile.matchPreference).then((result) => {
+        if (result) {
+          setCurrentScreen("voice-call");
+        }
+      });
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full text-white">
-              <Users className="w-8 h-8" />
-            </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Random Chat
-            </h1>
-          </div>
-          <p className="text-gray-600 text-lg">Connect with strangers from around the world</p>
-        </div>
+  const handleBuyCoins = () => {
+    setShowCoinModal(true);
+  };
 
-        {/* Main Chat Interface */}
-        <Card className="overflow-hidden shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          {/* Chat Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {isConnected ? (
-                  <>
-                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="font-semibold">Connected to {strangerName}</span>
-                  </>
-                ) : isConnecting ? (
-                  <>
-                    <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-                    <span className="font-semibold">Connecting...</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                    <span className="font-semibold">Not connected</span>
-                  </>
+  const handleUpgradePremium = () => {
+    setCurrentScreen("premium");
+  };
+
+  const handleCoinPurchase = (pack: string) => {
+    // This is called after successful payment - no action needed here
+  };
+
+  const handleCoinPurchaseSuccess = (pack: string, coins: number) => {
+    // Add coins to balance after successful payment
+    setCoinBalance(prev => prev + coins);
+    
+    toast({
+      title: "Coins Added Successfully! 💰",
+      description: `${coins} coins have been credited to your account.`,
+    });
+  };
+
+  const handleSubscription = (plan: string, autoRenew: boolean) => {
+    if (plan === 'daily-unlimited') {
+      setHasUnlimitedCalls(true);
+      setAutoRenewEnabled(autoRenew);
+      
+      // Set expiry to 24 hours from now
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 24);
+      setUnlimitedCallsExpiry(expiry);
+      
+      toast({
+        title: "Unlimited Calls Activated! 🎉",
+        description: `Payment successful! You now have unlimited voice calls for 24 hours. ${autoRenew ? 'Auto-renew is enabled.' : ''}`,
+      });
+    }
+  };
+  
+  const handlePremiumSubscribe = (plan: string) => {
+    // Only activate premium after successful payment
+    setIsPremium(true);
+    setCurrentScreen("home");
+    
+    toast({
+      title: "Premium Activated! 👑",
+      description: "Payment successful! You now have access to all premium features.",
+    });
+  };
+
+  const handleStreakRewardClaim = (day: number, reward: { type: 'coins' | 'premium'; amount?: number }) => {
+    claimReward(day);
+    
+    if (reward.type === 'coins' && reward.amount) {
+      setCoinBalance(prev => prev + reward.amount!);
+      toast({
+        title: "Streak Reward Claimed!",
+        description: `You earned ${reward.amount} coins for your ${day}-day streak!`,
+      });
+    } else if (reward.type === 'premium') {
+      setIsPremium(true);
+      toast({
+        title: "Premium Boost Activated!",
+        description: "You've unlocked premium features for reaching a 30-day streak!",
+      });
+    }
+  };
+
+  const handleMysteryBoxReward = () => {
+    if (currentReward) {
+      if (currentReward.type === 'coins' && currentReward.amount) {
+        setCoinBalance(prev => prev + currentReward.amount!);
+      }
+      
+      toast({
+        title: "Mystery Box Opened! 🎉",
+        description: currentReward.description,
+      });
+    }
+  };
+
+  const handleOpenSpinWheel = () => {
+    setAppState("spin-wheel");
+  };
+
+  const handleSpinWheelBack = () => {
+    setAppState("main");
+  };
+
+  const handleCoinsEarned = (amount: number) => {
+    setCoinBalance(prev => prev + amount);
+  };
+
+  const handleSpendCoins = (amount: number) => {
+    setCoinBalance(prev => Math.max(0, prev - amount));
+    toast({
+      title: "Coins spent",
+      description: `${amount} coins used for voice call.`,
+    });
+  };
+
+  // Show loading during auth check
+  if (authLoading) {
+    return <SplashScreen onComplete={() => {}} />;
+  }
+
+  // Redirect to auth if not authenticated
+  if (!isAuthenticated && appState !== "splash" && appState !== "auth") {
+    return <AuthScreen onSuccess={() => setAppState("main")} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Conditional rendering based on app state */}
+      {appState === "splash" && (
+        <SplashScreen onComplete={() => setAppState(isAuthenticated ? (userProfile ? "main" : "onboarding") : "auth")} />
+      )}
+
+      {appState === "auth" && (
+        <AuthScreen onSuccess={() => setAppState(userProfile ? "main" : "onboarding")} />
+      )}
+
+
+      {(appState === "onboarding" || isEditingProfile) && (
+        <OnboardingScreen
+          initialProfile={isEditingProfile ? userProfile : undefined}
+          isPremium={isPremium}
+          onRequestUpgrade={() => setShowPremiumModal(true)}
+          onComplete={(profile) => {
+            setUserProfile(profile);
+            if (isEditingProfile) {
+              setIsEditingProfile(false);
+            } else {
+              setAppState("main");
+            }
+          }}
+          onSkip={() => {
+            if (isEditingProfile) {
+              setIsEditingProfile(false);
+            } else {
+              // Create a minimal default profile for skipped onboarding
+              const defaultProfile: UserProfile = {
+                username: "User",
+                photos: [],
+                bio: "",
+                interests: [],
+                matchPreference: "anyone",
+                gender: "male"
+              };
+              setUserProfile(defaultProfile);
+              setAppState("main");
+            }
+          }}
+        />
+      )}
+
+      {appState === "spin-wheel" && (
+        <SpinWheelScreen
+          onBack={handleSpinWheelBack}
+          onCoinsEarned={handleCoinsEarned}
+        />
+      )}
+
+      {appState === "main" && (
+        <>
+          {(currentScreen === "call" || currentScreen === "video") && (
+            <VideoCallScreen
+              onEndCall={() => {
+                setCurrentScreen("post-call");
+                realMatching.endMatch();
+                // Trigger mystery box chance after ending call
+                setTimeout(() => {
+                  triggerMysteryBox();
+                }, 1000);
+              }}
+              onReconnect={() => {
+                toast({
+                  title: "Reconnecting...",
+                  description: "Looking for your previous chat partner.",
+                });
+              }}
+              onReport={() => {
+                toast({
+                  title: "Report submitted",
+                  description: "Thank you for keeping our community safe.",
+                });
+              }}
+              onBlock={() => {
+                toast({
+                  title: "User blocked",
+                  description: "You won't be matched with this user again.",
+                });
+              }}
+              onBack={() => {
+                setCurrentScreen("home");
+                realMatching.cancelMatching();
+              }}
+              coinBalance={effectiveCoinBalance}
+              onSpendCoins={(amount) => {
+                setCoinBalance(prev => Math.max(0, prev - amount));
+              }}
+              userProfile={userProfile ? {
+                ...userProfile,
+                userId: user?.id || `anonymous-${Date.now()}`
+              } : undefined}
+              isPremium={isPremium}
+              realMatchingHook={realMatching}
+            />
+          )}
+
+          {currentScreen === "match" && userProfile && (
+            <MatchScreen
+              onStartMatch={() => {
+                // From Match screen, also go directly to video call
+                setCurrentScreen("video");
+                realMatching.startMatching(userProfile.matchPreference);
+              }}
+              isPremium={isPremium}
+              matchPreference={userProfile.matchPreference}
+              onChangePreference={(pref) => {
+                setUserProfile({...userProfile, matchPreference: pref});
+              }}
+              onRequestUpgrade={() => setCurrentScreen("premium")}
+              onBuyCoins={handleBuyCoins}
+              onBack={() => {
+                setCurrentScreen("home");
+                realMatching.cancelMatching();
+              }}
+            />
+          )}
+
+          {currentScreen === "voice-call" && (
+            <VoiceCallActiveScreen
+              onEndCall={() => {
+                setCurrentScreen("post-call");
+                // Trigger mystery box chance after ending call
+                setTimeout(() => {
+                  triggerMysteryBox();
+                }, 1000);
+              }}
+              onReconnect={() => {
+                toast({
+                  title: "Reconnecting...",
+                  description: "Looking for your previous chat partner.",
+                });
+              }}
+              onReport={() => {
+                toast({
+                  title: "Report submitted",
+                  description: "Thank you for keeping our community safe.",
+                });
+              }}
+              onBlock={() => {
+                toast({
+                  title: "User blocked",
+                  description: "You won't be matched with this user again.",
+                });
+              }}
+              coinBalance={effectiveCoinBalance}
+              onSpendCoins={(amount) => {
+                setCoinBalance(prev => Math.max(0, prev - amount));
+              }}
+            />
+          )}
+
+          {currentScreen === "post-call" && (
+            <PostCallProfileScreen
+              profile={mockCallPartnerProfile}
+              onReject={() => {
+                setCurrentScreen("home");
+              }}
+              onAccept={() => {
+                setCurrentScreen("home");
+                setActiveTab("chat");
+              }}
+            />
+          )}
+
+          {currentScreen === "chat-detail" && activeChatId && (() => {
+            const chat = chatData[activeChatId];
+            if (!chat) {
+              setCurrentScreen("home");
+              setActiveTab("chat");
+              return null;
+            }
+            
+            return (
+              <ChatDetailScreen
+                chat={chat}
+                onBack={() => {
+                  setCurrentScreen("home");
+                  setActiveTab("chat");
+                }}
+                onSend={(text) => {
+                  if (!activeChatId) return;
+                  
+                  const newMessage: Message = {
+                    id: Date.now().toString(),
+                    sender: "me",
+                    text: text,
+                    time: new Date().toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })
+                  };
+                  
+                  // Update chat data
+                  setChatData(prev => ({
+                    ...prev,
+                    [activeChatId]: {
+                      ...prev[activeChatId],
+                      messages: [...prev[activeChatId].messages, newMessage]
+                    }
+                  }));
+                  
+                  // Update chat preview
+                  setChats(prev => prev.map(chat => 
+                    chat.id === activeChatId 
+                      ? { ...chat, lastMessage: text, time: "now" }
+                      : chat
+                  ));
+                  
+                  // Simulate a response after a delay (optional)
+                  setTimeout(() => {
+                    const responses = [
+                      "That's interesting! 😊",
+                      "Cool! Tell me more",
+                      "Haha, nice! 😄", 
+                      "I agree!",
+                      "Sounds good!",
+                      "Thanks for sharing!"
+                    ];
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    
+                    const responseMessage: Message = {
+                      id: (Date.now() + 1).toString(),
+                      sender: "them",
+                      text: randomResponse,
+                      time: new Date().toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })
+                    };
+                    
+                    setChatData(prev => ({
+                      ...prev,
+                      [activeChatId]: {
+                        ...prev[activeChatId],
+                        messages: [...prev[activeChatId].messages, responseMessage]
+                      }
+                    }));
+                    
+                    setChats(prev => prev.map(chat => 
+                      chat.id === activeChatId 
+                        ? { ...chat, lastMessage: randomResponse, time: "now" }
+                        : chat
+                    ));
+                   }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+                }}
+              />
+            );
+          })()}
+
+          
+          {currentScreen === "room-call" && activeRoomId && activeRoomType && (
+            <GroupCallScreen
+              roomId={activeRoomId}
+              roomType={activeRoomType}
+              onLeave={() => {
+                setCurrentScreen("home");
+                setActiveRoomId(null);
+                setActiveRoomType(null);
+                setActiveTab("rooms");
+              }}
+              onBack={() => {
+                setCurrentScreen("home");
+                setActiveRoomId(null);
+                setActiveRoomType(null);
+                setActiveTab("rooms");
+              }}
+            />
+          )}
+          
+          {currentScreen === "blurred-profiles" && (
+            <BlurredProfilesScreen
+              profiles={blurredProfiles}
+              coinBalance={effectiveCoinBalance}
+              onBack={() => {
+                setCurrentScreen("home");
+                setActiveTab("profile");
+              }}
+              onUnlockProfile={(profileId, cost) => {
+                unlockProfile(profileId);
+                setCoinBalance(prev => prev - cost);
+              }}
+              onBuyCoins={handleBuyCoins}
+            />
+          )}
+
+          {currentScreen === "premium" && (
+            <PremiumScreen
+              onBack={() => setCurrentScreen("home")}
+              onSubscribe={handlePremiumSubscribe}
+            />
+          )}
+
+          {currentScreen === "earn-coins" && (
+            <EarnCoinsScreen
+              onBack={() => {
+                setCurrentScreen("home");
+                setActiveTab("coins");
+              }}
+            />
+          )}
+
+          {currentScreen === "referrals" && (
+            <ReferralScreen />
+          )}
+          {currentScreen === "home" && (
+            <>
+              {/* Hero Background */}
+              <div 
+                className="fixed inset-0 opacity-5 pointer-events-none"
+                style={{
+                  backgroundImage: `url(${heroBackground})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              />
+              
+              {/* Main Content */}
+              <div className="relative z-10">
+                {activeTab === "home" && (
+                  <HomeScreen
+                    onStartMatch={handleStartMatch}
+                    onBuyCoins={handleBuyCoins}
+                    onUpgradePremium={handleUpgradePremium}
+                    onOpenSpinWheel={handleOpenSpinWheel}
+                    matchPreference={userProfile?.matchPreference || "anyone"}
+                    onChangePreference={(pref) => {
+                      if (userProfile) {
+                        setUserProfile({...userProfile, matchPreference: pref});
+                      }
+                    }}
+                    isPremium={isPremium}
+                    hasUnlimitedCalls={hasUnlimitedCalls}
+                    onRequestUpgrade={() => setShowPremiumModal(true)}
+                    onOpenReferrals={() => setCurrentScreen("referrals")}
+                    coinBalance={effectiveCoinBalance}
+                  />
+                )}
+                
+                {activeTab === "match" && userProfile && (
+                  <MatchScreen
+                    onStartMatch={() => {
+                      // From Match tab, also go directly to video call
+                      setCurrentScreen("video");
+                      realMatching.startMatching(userProfile.matchPreference);
+                    }}
+                    isPremium={isPremium}
+                    matchPreference={userProfile.matchPreference}
+                    onChangePreference={(pref) => {
+                      setUserProfile({...userProfile, matchPreference: pref});
+                    }}
+                    onRequestUpgrade={() => setCurrentScreen("premium")}
+                    onBuyCoins={handleBuyCoins}
+                    onBack={() => setActiveTab("home")}
+                  />
+                )}
+                
+                {activeTab === "voice" && userProfile && (
+                  <VoiceCallScreen
+                    onStartCall={handleStartVoiceCall}
+                    isPremium={isPremium}
+                    hasUnlimitedCalls={hasUnlimitedCalls}
+                    coinBalance={effectiveCoinBalance}
+                    matchPreference={userProfile.matchPreference}
+                    onChangePreference={(pref) => {
+                      setUserProfile({...userProfile, matchPreference: pref});
+                    }}
+                    onRequestUpgrade={() => setCurrentScreen("premium")}
+                    onBack={() => setActiveTab("home")}
+                    onBuyCoins={handleBuyCoins}
+                    onSpendCoins={handleSpendCoins}
+                  />
+                )}
+                
+                {activeTab === "coins" && (
+                  <CoinsScreen
+                    coinBalance={effectiveCoinBalance}
+                    streakData={streakData}
+                    hasUnlimitedCalls={hasUnlimitedCalls}
+                    unlimitedCallsExpiry={unlimitedCallsExpiry}
+                    autoRenewEnabled={autoRenewEnabled}
+                    onBuyCoins={handleBuyCoins}
+                    onOpenStreakModal={() => setShowStreakModal(true)}
+                    onOpenSpinWheel={handleOpenSpinWheel}
+                    onManageSubscription={() => {
+                      toast({
+                        title: "Subscription Management",
+                        description: "You can cancel auto-renew anytime in your account settings.",
+                      });
+                    }}
+                    onOpenEarnCoins={() => setCurrentScreen("earn-coins")}
+                  />
+                )}
+                
+                {activeTab === "rooms" && (
+                  <RoomsScreen
+                    onBack={() => setActiveTab("home")}
+                    onJoinRoom={(roomId, roomType) => {
+                      setActiveRoomId(roomId);
+                      setActiveRoomType(roomType);
+                      setCurrentScreen("room-call");
+                    }}
+                  />
+                )}
+                
+                {activeTab === "friends" && (
+                  <SocialScreen
+                    onBack={() => setActiveTab("home")}
+                    onStartChat={(userId) => {
+                      toast({
+                        title: "Chat Started",
+                        description: "Opening chat with your friend",
+                      });
+                      setActiveTab("groups");
+                    }}
+                    onStartVideoCall={(userId) => {
+                      setCurrentScreen("call");
+                    }}
+                  />
+                )}
+                
+                {activeTab === "groups" && (
+                  <ChatListScreen
+                    chats={chats}
+                    onOpenChat={(chatId) => {
+                      setActiveChatId(chatId);
+                      setCurrentScreen("chat-detail");
+                    }}
+                  />
+                )}
+                
+                {activeTab === "profile" && userProfile && (
+                  <ProfileScreen
+                    profile={userProfile}
+                    onEdit={() => setIsEditingProfile(true)}
+                    onUpdateProfile={(updatedProfile) => setUserProfile(updatedProfile)}
+                    onViewBlurredProfiles={() => setCurrentScreen("blurred-profiles")}
+                    onOpenSettings={() => setShowSettingsModal(true)}
+                  />
                 )}
               </div>
-              
-              {isConnected ? (
-                <Button
-                  onClick={disconnect}
-                  variant="outline"
-                  size="sm"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                >
-                  <Shuffle className="w-4 h-4 mr-2" />
-                  New Chat
-                </Button>
-              ) : (
-                <Button
-                  onClick={connectToStranger}
-                  disabled={isConnecting}
-                  variant="outline"
-                  size="sm"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 disabled:opacity-50"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  {isConnecting ? 'Connecting...' : 'Connect'}
-                </Button>
-              )}
-            </div>
-          </div>
 
-          {/* Messages Area */}
-          <div className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
-            {!isConnected && !isConnecting && (
-              <div className="text-center text-gray-500 mt-16">
-                <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium mb-2">Ready to meet someone new?</p>
-                <p>Click "Connect" to start chatting with a random stranger!</p>
-              </div>
-            )}
-
-            {isConnecting && (
-              <div className="text-center text-gray-500 mt-16">
-                <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-lg font-medium">Finding someone to chat with...</p>
-              </div>
-            )}
-
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm ${
-                    message.sender === 'me'
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md'
-                      : 'bg-white border rounded-bl-md'
-                  }`}
-                >
-                  <p className="text-sm">{message.text}</p>
-                  <p className={`text-xs mt-1 ${
-                    message.sender === 'me' ? 'text-blue-100' : 'text-gray-500'
-                  }`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              </div>
-            ))}
-
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-white border rounded-2xl rounded-bl-md px-4 py-2 shadow-sm">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Message Input */}
-          <div className="p-4 border-t bg-white">
-            <div className="flex gap-2">
-              <Input
-                value={currentMessage}
-                onChange={(e) => setCurrentMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={isConnected ? "Type your message..." : "Connect to start chatting"}
-                disabled={!isConnected}
-                className="flex-1 rounded-full border-2 focus:border-blue-500 transition-colors"
+              {/* Bottom Navigation */}
+              <BottomNav 
+                activeTab={activeTab} 
+                onTabChange={setActiveTab} 
               />
-              <Button
-                onClick={sendMessage}
-                disabled={!isConnected || !currentMessage.trim()}
-                className="rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                size="icon"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </Card>
+            </>
+          )}
+        </>
+      )}
 
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>Be respectful and kind to strangers. Have fun chatting!</p>
-        </div>
-      </div>
+      {/* Modals - These should always be rendered */}
+      <CoinPurchaseModal
+        isOpen={showCoinModal}
+        onClose={() => setShowCoinModal(false)}
+        onPurchase={handleCoinPurchaseSuccess}
+        onSubscribe={handleSubscription}
+        userInfo={{
+          name: userProfile?.username,
+          email: undefined, // Add email if available
+          phone: undefined  // Add phone if available
+        }}
+      />
+      
+      <LoginStreakModal
+        isOpen={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+        currentStreak={streakData.currentStreak}
+        claimedDays={streakData.claimedDays}
+        onClaimReward={handleStreakRewardClaim}
+      />
+      
+      <MysteryBoxModal
+        isOpen={showMysteryBox}
+        onClose={() => {
+          handleMysteryBoxReward();
+          closeMysteryBox();
+        }}
+        onOpenBox={openMysteryBox}
+        reward={currentReward}
+      />
+      
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
+      
+      {/* WebRTC Diagnostic Panel - Debug Tool */}
+      {showDiagnosticPanel && (
+        <WebRTCDiagnosticPanel onClose={() => setShowDiagnosticPanel(false)} />
+      )}
     </div>
   );
 };
