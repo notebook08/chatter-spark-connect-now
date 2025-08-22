@@ -1,73 +1,55 @@
-# Welcome to your Lovable project
+<h1 align="center">✨ Fullstack Chat & Video Calling App ✨</h1>
 
-## Project info
+![Demo App](/frontend/public/screenshot-for-readme.png)
 
-**URL**: https://lovable.dev/projects/759429d2-4cdb-4b9d-8d5b-1b87770a2cba
+Highlights:
 
-## How can I edit this code?
+- 🌐 Real-time Messaging with Typing Indicators & Reactions
+- 📹 1-on-1 and Group Video Calls with Screen Sharing & Recording
+- 🔐 JWT Authentication & Protected Routes
+- 🌍 Language Exchange Platform with 32 Unique UI Themes
+- ⚡ Tech Stack: React + Express + MongoDB + TailwindCSS + TanStack Query
+- 🧠 Global State Management with Zustand
+- 🚨 Error Handling (Frontend & Backend)
+- 🚀 Free Deployment
+- 🎯 Built with Scalable Technologies like Stream
+- ⏳ And much more!
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🧪 .env Setup
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/759429d2-4cdb-4b9d-8d5b-1b87770a2cba) and start prompting.
+### Backend (`/backend`)
 
-Changes made via Lovable will be committed automatically to this repo.
+```
+PORT=5001
+MONGO_URI=your_mongo_uri
+STEAM_API_KEY=your_steam_api_key
+STEAM_API_SECRET=your_steam_api_secret
+JWT_SECRET_KEY=your_jwt_secret
+NODE_ENV=development
+```
 
-**Use your preferred IDE**
+### Frontend (`/frontend`)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```
+VITE_STREAM_API_KEY=your_stream_api_key
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🔧 Run the Backend
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+cd backend
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 💻 Run the Frontend
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/759429d2-4cdb-4b9d-8d5b-1b87770a2cba) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```bash
+cd frontend
+npm install
+npm run dev
+```
