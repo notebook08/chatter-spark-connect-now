@@ -13,19 +13,11 @@
   "license": "ISC",
   "description": "Streamify full-stack app",
   "dependencies": {
-    "@radix-ui/react-slot": "^1.2.3",
-    "@radix-ui/react-toast": "^1.2.15",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.21.0",
-    "i18next": "^25.4.2",
-    "lucide-react": "^0.542.0",
-    "mongoose": "^8.17.2",
-    "react-i18next": "^15.7.3",
-    "tailwind-merge": "^3.3.1"
+    "mongoose": "^8.17.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
