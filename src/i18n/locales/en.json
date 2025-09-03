@@ -2,106 +2,13 @@
   "common": {
     "select": "Select",
     "continue": "Continue",
-    "back": "Back",
-    "next": "Next",
-    "complete": "Complete",
-    "close": "Close",
-    "view": "View",
-    "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success"
   },
-  "app": {
-    "name": "Dating App",
-    "subtitle": "Voice Connections"
-  },
-  "auth": {
-    "login": "Log In",
-    "signup": "Sign Up",
-    "loginSubtitle": "Welcome back to voice connections",
-    "signupSubtitle": "Start your voice dating journey",
-    "needAccount": "Don't have an account? Sign up",
-    "haveAccount": "Already have an account? Log in"
-  },
-  "onboarding": {
-    "welcome": "Welcome!",
-    "welcomeText": "Let's get you started with voice connections",
-    "profile": "Your Profile",
-    "profileText": "Tell us about yourself",
-    "preferences": "Preferences",
-    "preferencesText": "Set your matching preferences"
-  },
-  "home": {
-    "welcome": "Welcome Back",
-    "subtitle": "Ready for a voice connection?",
-    "voiceCall": "Voice Call",
-    "videoCall": "Video Call",
-    "openChat": "Open Chat",
-    "viewMatches": "View Matches",
-    "buyCoins": "Buy Coins",
-    "upgradePremium": "Upgrade to Premium"
-  },
-  "profile": {
-    "premium": "Premium Member",
-    "bio": "Bio",
-    "noBio": "No bio added yet",
-    "interests": "Interests",
-    "noInterests": "No interests added yet",
-    "edit": "Edit Profile",
-    "upgradePremium": "Upgrade to Premium"
-  },
-  "voiceCall": {
-    "title": "Voice Call",
-    "description": "Connect with someone through voice",
-    "startCall": "Start Voice Call",
-    "activeUsers": "Active Users",
-    "onlineNow": "Online now",
-    "settings": "Call Settings",
-    "connecting": "Connecting...",
-    "connected": "Connected",
-    "duration": "Duration",
-    "micMuted": "Microphone muted",
-    "volumeMuted": "Volume muted"
-  },
-  "videoCall": {
-    "videoOff": "Video is off",
-    "connecting": "Connecting..."
-  },
-  "matches": {
-    "title": "Your Matches",
-    "noMatches": "No matches yet",
-    "noMatchesText": "Start a voice call to meet new people",
-    "lastSeen": "Last seen",
-    "chat": "Chat"
-  },
-  "chat": {
-    "title": "Chats",
-    "noChats": "No conversations yet",
-    "noChatsText": "Start chatting with your matches",
-    "online": "Online",
-    "offline": "Last seen recently",
-    "typeMessage": "Type a message..."
-  },
-  "postCall": {
-    "defaultBio": "Enjoyed our voice chat!"
-  },
-  "nav": {
-    "home": "Home",
-    "voice": "Voice",
-    "matches": "Matches",
-    "chat": "Chat",
-    "profile": "Profile"
-  },
-  "languages": {
-    "title": "Choose Your Language",
-    "description": "Select your preferred language to continue"
-  },
   "premium": {
-    "title": "Upgrade to Premium",
-    "subtitle": "Unlock all features and enhance your dating experience",
     "upgradeTitle": "Upgrade to Premium",
     "upgradeSubtitle": "Unlock unlimited features",
     "unlimitedCalls": "Premium Features",
@@ -111,12 +18,7 @@
       "unlimitedCallTime": "Unlimited call time",
       "priorityQueue": "Priority in matching queue",
       "noAds": "Ad-free experience",
-      "premiumSupport": "Premium customer support",
-      "unlimitedLikes": "Unlimited likes",
-      "superBoost": "Super boost your profile",
-      "seeWhoLiked": "See who liked you",
-      "advancedFilters": "Advanced filters",
-      "prioritySupport": "Priority customer support"
+      "premiumSupport": "Premium customer support"
     },
     "badges": {
       "limitedTime": "LIMITED TIME",
@@ -127,15 +29,7 @@
   "coins": {
     "title": "Buy Coins",
     "subtitle": "Purchase coins for voice calls",
-    "description": "Purchase coins to unlock premium features",
-    "balance": "Coin Balance",
-    "purchase": "Purchase",
     "perMinute": "per minute",
-    "securePayments": "Secure payments powered by Razorpay",
-    "packages": {
-      "starter": "Starter Pack",
-      "popular": "Popular Pack",
-      "premium": "Premium Pack"
-    }
+    "securePayments": "Secure payments powered by Razorpay"
   }
 }
