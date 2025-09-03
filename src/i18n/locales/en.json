@@ -1,0 +1,35 @@
+{
+  "common": {
+    "select": "Select",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "premium": {
+    "upgradeTitle": "Upgrade to Premium",
+    "upgradeSubtitle": "Unlock unlimited features",
+    "unlimitedCalls": "Premium Features",
+    "securePayments": "Secure payments powered by Razorpay",
+    "features": {
+      "genderPreference": "Gender preference selection",
+      "unlimitedCallTime": "Unlimited call time",
+      "priorityQueue": "Priority in matching queue",
+      "noAds": "Ad-free experience",
+      "premiumSupport": "Premium customer support"
+    },
+    "badges": {
+      "limitedTime": "LIMITED TIME",
+      "mostPopular": "MOST POPULAR",
+      "bestValue": "BEST VALUE"
+    }
+  },
+  "coins": {
+    "title": "Buy Coins",
+    "subtitle": "Purchase coins for voice calls",
+    "perMinute": "per minute",
+    "securePayments": "Secure payments powered by Razorpay"
+  }
+}
