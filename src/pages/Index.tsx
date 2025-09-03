@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import HomeScreen from "../frontend/src/components/HomeScreen";
-import { CoinPurchaseModal } from "../frontend/src/components/CoinPurchaseModal";
-import { PremiumModal } from "../frontend/src/components/PremiumModal";
-import { useCoinBalance } from "../frontend/src/hooks/useCoinBalance";
+import { CoinPurchaseModal } from "../components/Coins/CoinPurchaseModal";
+import { PremiumModal } from "../components/Premium/PremiumModal";
 import toast from "react-hot-toast";
 
 interface UserProfile {
@@ -16,23 +15,15 @@ interface UserProfile {
 }
 
 const Index = () => {
-  const [appState, setAppState] = useState("main");
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [currentScreen, setCurrentScreen] = useState("home");
-  const [activeTab, setActiveTab] = useState("home");
   const [showCoinModal, setShowCoinModal] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [hasUnlimitedCalls, setHasUnlimitedCalls] = useState(false);
   const [coinBalance, setCoinBalance] = useState(100);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  
-  const { balance: coinBalanceFromHook, loading: coinLoading, addCoins } = useCoinBalance();
-  const effectiveCoinBalance = !coinLoading ? coinBalanceFromHook : coinBalance;
 
   const handleStartVoiceCall = () => {
-    if (userProfile) {
-      setCurrentScreen("voice-call");
-    }
+    setCurrentScreen("voice-call");
   };
 
   const handleBuyCoins = () => {
@@ -43,40 +34,26 @@ const Index = () => {
     setShowPremiumModal(true);
   };
 
-  const handleSpendCoins = (amount: number) => {
-    setCoinBalance(prev => Math.max(0, prev - amount));
-    toast({
-      title: "Coins spent",
-      description: `${amount} coins used for voice call.`,
-    });
-  };
-
   const handleCoinPurchaseSuccess = (pack: string, coins: number) => {
-    addCoins(coins);
-    toast({
-      title: "Coins Added Successfully! 💰",
-      description: `${coins} coins have been credited to your account.`,
-    });
+    setCoinBalance(prev => prev + coins);
+    toast.success(`${coins} coins added successfully! 💰`);
   };
 
   const handlePremiumSubscribe = (plan: string) => {
     setIsPremium(true);
     setShowPremiumModal(false);
-    toast({
-      title: "Premium Activated!",
-      description: "Payment successful! You now have access to all premium features.",
-    });
+    toast.success("Premium activated! Payment successful! 🎉");
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Main App Content */}
       {currentScreen === "home" && (
         <HomeScreen 
           onStartMatch={() => setCurrentScreen("call")}
           onStartVoiceCall={handleStartVoiceCall}
           onOpenProfile={() => setCurrentScreen("profile")}
-          coinBalance={effectiveCoinBalance}
+          coinBalance={coinBalance}
           isPremium={isPremium}
           hasUnlimitedCalls={hasUnlimitedCalls}
           onBuyCoins={handleBuyCoins}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Video, Phone, User, Coins, Crown, Settings } from 'lucide-react';
+import { Video, Phone, Settings, Coins, Crown } from 'lucide-react';
 import { formatCurrency } from '../utils/paymentHelpers';
 
 const HomeScreen = ({ 
